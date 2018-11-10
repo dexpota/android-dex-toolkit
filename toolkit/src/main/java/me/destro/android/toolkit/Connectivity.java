@@ -27,23 +27,26 @@ package me.destro.android.toolkit;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
 
 /**
  * Check device's network connectivity and speed 
- * @author emil http://stackoverflow.com/users/220710/emil
- *
+ * @author emil https://stackoverflow.com/users/220710/emil
+ * @author revision by dexpota https://github.com/dexpota
  */
 public class Connectivity {
   
 	/**
 	 * Get the network info
 	 * @param context
-	 * @return
+	 * @return a NetworkInfo object for the current default network or null if no default network is currently active
 	 */
-	public static NetworkInfo getNetworkInfo(Context context){
+	@Nullable
+	public static NetworkInfo getNetworkInfo(@NonNull Context context){
 	    ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-	    return cm.getActiveNetworkInfo();
+	    return cm != null ? cm.getActiveNetworkInfo() : null;
 	}
 	
 	/**
@@ -51,7 +54,7 @@ public class Connectivity {
 	 * @param context
 	 * @return
 	 */
-	public static boolean isConnected(Context context){
+	public static boolean isConnected(@NonNull Context context){
 	    NetworkInfo info = Connectivity.getNetworkInfo(context);
 	    return (info != null && info.isConnected());
 	}
@@ -59,10 +62,9 @@ public class Connectivity {
 	/**
 	 * Check if there is any connectivity to a Wifi network
 	 * @param context
-	 * @param type
 	 * @return
 	 */
-	public static boolean isConnectedWifi(Context context){
+	public static boolean isConnectedWifi(@NonNull Context context){
 	    NetworkInfo info = Connectivity.getNetworkInfo(context);
 	    return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI);
 	}
@@ -70,10 +72,9 @@ public class Connectivity {
 	/**
 	 * Check if there is any connectivity to a mobile network
 	 * @param context
-	 * @param type
 	 * @return
 	 */
-	public static boolean isConnectedMobile(Context context){
+	public static boolean isConnectedMobile(@NonNull Context context){
 	    NetworkInfo info = Connectivity.getNetworkInfo(context);
 	    return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_MOBILE);
 	}
@@ -83,7 +84,7 @@ public class Connectivity {
 	 * @param context
 	 * @return
 	 */
-	public static boolean isConnectedFast(Context context){
+	public static boolean isConnectedFast(@NonNull Context context){
 	    NetworkInfo info = Connectivity.getNetworkInfo(context);
 	    return (info != null && info.isConnected() && Connectivity.isConnectionFast(info.getType(),info.getSubtype()));
 	}
