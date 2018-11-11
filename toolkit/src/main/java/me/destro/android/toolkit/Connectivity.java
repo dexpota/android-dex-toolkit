@@ -26,9 +26,12 @@ package me.destro.android.toolkit;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.telephony.TelephonyManager;
 
 /**
@@ -40,19 +43,26 @@ public class Connectivity {
   
 	/**
 	 * Get the network info
-	 * @param context
+	 * @param context Non-null Android's context
 	 * @return a NetworkInfo object for the current default network or null if no default network is currently active
 	 */
 	@Nullable
-	public static NetworkInfo getNetworkInfo(@NonNull Context context){
+	private static NetworkInfo getNetworkInfo(@NonNull Context context){
 	    ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 	    return cm != null ? cm.getActiveNetworkInfo() : null;
 	}
+
+	@RequiresApi(api = Build.VERSION_CODES.M)
+    @Nullable
+    private static NetworkCapabilities getNetworkCapabilities(@NonNull Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm != null ? cm.getNetworkCapabilities(cm.getActiveNetwork()) : null;
+    }
 	
 	/**
 	 * Check if there is any connectivity
-	 * @param context
-	 * @return
+	 * @param context Non-null Android's context
+	 * @return True if the active network is connected, false in other cases
 	 */
 	public static boolean isConnected(@NonNull Context context){
 	    NetworkInfo info = Connectivity.getNetworkInfo(context);
@@ -61,45 +71,115 @@ public class Connectivity {
 	
 	/**
 	 * Check if there is any connectivity to a Wifi network
-	 * @param context
-	 * @return
+	 * @param context Non-null Android's context
+	 * @return True if the active network is connected and a wifi connection, false in other cases
 	 */
-	public static boolean isConnectedWifi(@NonNull Context context){
-	    NetworkInfo info = Connectivity.getNetworkInfo(context);
-	    return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI);
+	public static boolean isConnectedWifi(@NonNull Context context) {
+        boolean wifi;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            wifi = isConnectedWifiM(context);
+        }else {
+            NetworkInfo info = Connectivity.getNetworkInfo(context);
+            wifi = (info != null
+                    && info.isConnected()
+                    && info.getType() == ConnectivityManager.TYPE_WIFI);
+        }
+        return wifi;
 	}
-	
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private static boolean isConnectedWifiM(@NonNull Context context){
+        NetworkCapabilities capabilities = Connectivity.getNetworkCapabilities(context);
+        return capabilities != null && !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
+    }
+
 	/**
 	 * Check if there is any connectivity to a mobile network
-	 * @param context
-	 * @return
+	 * @param context Non-null Android's context
+	 * @return True if the active network is connected and a mobile connection, false in other cases
 	 */
-	public static boolean isConnectedMobile(@NonNull Context context){
-	    NetworkInfo info = Connectivity.getNetworkInfo(context);
-	    return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_MOBILE);
-	}
+	public static boolean isConnectedMobile(@NonNull Context context) {
+        boolean mobile;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mobile = isConnectedMobileM(context);
+        }else {
+            NetworkInfo info = Connectivity.getNetworkInfo(context);
+            mobile = (info != null
+                    && info.isConnected()
+                    && info.getType() == ConnectivityManager.TYPE_MOBILE);
+        }
+        return mobile;
+    }
+
+	@RequiresApi(api = Build.VERSION_CODES.M)
+    private static boolean isConnectedMobileM(@NonNull Context context) {
+        NetworkCapabilities capabilities = Connectivity.getNetworkCapabilities(context);
+        return capabilities != null && !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
+    }
 	
 	/**
 	 * Check if there is fast connectivity
-	 * @param context
-	 * @return
+	 * @param context Non-null Android's context
+	 * @return True if the active network is 'fast', false in other cases
 	 */
-	public static boolean isConnectedFast(@NonNull Context context){
-	    NetworkInfo info = Connectivity.getNetworkInfo(context);
-	    return (info != null && info.isConnected() && Connectivity.isConnectionFast(info.getType(),info.getSubtype()));
+	public static boolean isConnectedFast(@NonNull Context context) {
+	    boolean fast;
+	    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            fast = isConnectedFastM(context);
+        }else {
+            NetworkInfo info = Connectivity.getNetworkInfo(context);
+            fast = (info != null && info.isConnected() &&
+                    Connectivity.isConnectionFast(info.getType(), info.getSubtype()));
+        }
+        return fast;
 	}
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private static boolean isConnectedFastM(@NonNull Context context){
+        return Connectivity.getLinkDownstreamBandwidthKbps(context) >= 2048;
+    }
+
+    public static boolean isConnectionMetered(@NonNull Context context) {
+	    boolean metered;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            metered = isConnectionMeteredM(context);
+        }else {
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            metered = cm != null && cm.isActiveNetworkMetered();
+        }
+        return metered;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private static boolean isConnectionMeteredM(Context context) {
+        NetworkCapabilities capabilities = Connectivity.getNetworkCapabilities(context);
+        return capabilities != null && !capabilities.hasCapability(NetworkCapabilities
+                .NET_CAPABILITY_NOT_METERED);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public static int getLinkDownstreamBandwidthKbps(Context context){
+	    NetworkCapabilities capabilities = Connectivity.getNetworkCapabilities(context);
+	    return capabilities != null ? capabilities.getLinkDownstreamBandwidthKbps() : 0;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public static int getLinkUpstreamBandwidthKbps(Context context){
+        NetworkCapabilities capabilities = Connectivity.getNetworkCapabilities(context);
+        return capabilities != null ? capabilities.getLinkUpstreamBandwidthKbps() : 0;
+    }
 	
 	/**
 	 * Check if the connection is fast
-	 * @param type
-	 * @param subType
-	 * @return
+	 * @param type Type of connection (e.g. ConnectivityManager.TYPE_WIFI)
+	 * @param subType Sub-type of connection (e.g. TelephonyManager.NETWORK_TYPE_1xRTT)
+	 * @return True if the connection is fast
 	 */
-	public static boolean isConnectionFast(int type, int subType){
-		if(type==ConnectivityManager.TYPE_WIFI){
+	private static boolean isConnectionFast(int type, int subType){
+		if(type == ConnectivityManager.TYPE_WIFI) {
 			return true;
-		}else if(type==ConnectivityManager.TYPE_MOBILE){
-			switch(subType){
+		}else if(type == ConnectivityManager.TYPE_MOBILE) {
+			switch(subType) {
 			case TelephonyManager.NETWORK_TYPE_1xRTT:
 				return false; // ~ 50-100 kbps
 			case TelephonyManager.NETWORK_TYPE_CDMA:
@@ -139,7 +219,7 @@ public class Connectivity {
 			default:
 				return false;
 			}
-		}else{
+		}else {
 			return false;
 		}
 	}
