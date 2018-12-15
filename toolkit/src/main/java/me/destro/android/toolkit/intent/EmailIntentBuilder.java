@@ -30,7 +30,7 @@ public final class EmailIntentBuilder {
         return this;
     }
 
-    public EmailIntentBuilder build() {
+    public Intent build() {
         String mailto = String.format("mailto:%s", this.to);
         StringBuilder parametersBuilder = new StringBuilder();
 
@@ -54,6 +54,6 @@ public final class EmailIntentBuilder {
         intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(uri);
 
-        return this;
+        return intent;
     }
 }
