@@ -36,8 +36,7 @@ import android.telephony.TelephonyManager;
 
 /**
  * Check device's network connectivity and speed 
- * @author emil https://stackoverflow.com/users/220710/emil
- * @author revision by dexpota https://github.com/dexpota
+ * @author Emil Davtyan (https://stackoverflow.com/users/220710/emil)
  */
 public class Connectivity {
   
